@@ -27,7 +27,7 @@
 #define CLUSTER_CLIENT_VERSION	101
 
 /* singular instance domain translation */
-#define CLUSTER_INDOM		0x3ffff
+#define CLUSTER_INDOM		0x3fffff
 
 /* cluster for local (non-translated) metrics */
 #define CLUSTER_CLUSTER		0xfff
