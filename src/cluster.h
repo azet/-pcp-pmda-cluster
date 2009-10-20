@@ -16,9 +16,7 @@
  * 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
-
-#include "../linux/indom.h"
-#include "../linux/domain.h"
+#include "/var/lib/pcp/pmdas/linux/domain.h"
 
 /*************************
  * PMDA / CLIENT INTERFACE

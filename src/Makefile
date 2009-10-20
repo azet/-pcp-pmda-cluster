@@ -16,10 +16,10 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #
 
-TOPDIR = ../../..
-include $(TOPDIR)/src/include/builddefs
+include /etc/pcp.conf
+include $(PCP_INC_DIR)/builddefs
 
-DFILES	= config README
+DFILES	= config
 CFILES	= pmda.c server.c util.c pmclusterd.c
 HFILES  = cluster.h
 # These C files are automatically generated.
@@ -38,38 +38,32 @@ $(DAEMON)_OBJS = pmclusterd.o util.o $(AUTO_CFILES:.c=.o)
 
 # sub-PMDA namespace root nodes and help files
 
-SUBPMNS = ../linux/root_linux ../ib/root
-SUBHELP = ../linux/help ../ib/help
+SUBPMNS = $(PCP_VAR_DIR)/pmns/root_linux $(PCP_PMDAS_DIR)/ib/root
+SUBHELP = $(PCP_PMDAS_DIR)/linux/help $(PCP_PMDAS_DIR)/ib/help
 
 LDIRT	= help pmns metric_table.c domain.h pcp *.o $(IAM).log \
 	  pmda$(IAM) pmda_$(IAM).so $(DAEMON) pmns.tmp* subdomains.c
 
-default: build-me
+default: help pmns domain.h subdomains.c $(CMDTARGET) $(DAEMON)
 
-include $(BUILDRULES)
-
-build-me:	help pmns pcp domain.h subdomains.c \
-			$(CMDTARGET) $(DAEMON)
 install: default
-	$(INSTALL) -m 755 -d $(PMDADIR)
-	$(INSTALL) -m 755 -d $(PMDADIR)/nodes
-	$(INSTALL) -m 755 Install Remove $(CMDTARGET) $(PMDADIR)
-	$(INSTALL) -m 644 GNUmakefile.install $(PMDADIR)/Makefile
-	$(INSTALL) -m 644 $(DFILES) pmns root help domain.h $(PMDADIR)
-	$(INSTALL) -m 755 pmclusterd $(PCP_BINADM_DIR)/pmclusterd
-	$(INSTALL) -m 755 rc_pmclusterd $(PCP_SHARE_DIR)/lib/rc.pmclusterd
+	install -m 755 -d $(PREFIX)$(PMDADIR)
+	install -m 755 -d $(PREFIX)$(PMDADIR)/nodes
+	install -m 755 -d $(PREFIX)$(PCP_BINADM_DIR)
+	install -m 755 -d $(PREFIX)$(PCP_RC_DIR)
+	install -m 755 Install Remove $(CMDTARGET) $(PREFIX)$(PMDADIR)
+	install -m 644 $(DFILES) pmns root help domain.h $(PREFIX)$(PMDADIR)
+	install -m 755 pmclusterd $(PREFIX)$(PCP_BINADM_DIR)/pmclusterd
+	install -m 755 rc_pmclusterd $(PREFIX)$(PCP_RC_DIR)/pmclusterd
 
-PMNSDIR    = $(TOPDIR)/src/pmns
-STDPMID	   = $(PMNSDIR)/stdpmid
-RUN_STDPMID = $(RUN_IN_BUILD_ENV) CPATH=$(PMNSDIR)
-PMINFO     = $(TOPDIR)/src/pminfo/pminfo
+PMNSMERGE = $(PCP_LIB_DIR)/pcp/bin/pmnsmerge
 
 # Build a namespace containing all of the sub-PMDAS.  At the same time
 # generate a list of metric names and domain numbers and generate a C
 # source file containing the corresponding subdomain mapping.
 
 help pmns metric_table.c subdomains.c : \
-		config cluster.h $(SUBPMNS) $(SUBHELP) $(STDPMID) clusterns.pl pcp
+		config cluster.h $(SUBPMNS) $(SUBHELP) $(STDPMID) clusterns.pl
 	rm -f pmns.tmp*
 	echo "root {" >pmns.tmp
 	echo "}" >>pmns.tmp
@@ -80,12 +74,9 @@ help pmns metric_table.c subdomains.c : \
 	    echo "including PMNS from $$ns" ; \
 	    cd `dirname $$ns` && \
 	    pmdaroot=`basename $$ns` && \
-	    echo $(RUN_STDPMID) $(PMNSDIR)/pmnsmerge \
-		$$thisDir/pmns.tmp $$pmdaroot $$thisDir/pmns.tmp.out && \
-	    $(RUN_STDPMID) $(PMNSDIR)/pmnsmerge \
-		$$thisDir/pmns.tmp $$pmdaroot $$thisDir/pmns.tmp.out && \
-	    echo $(RUN_STDPMID) $(PMINFO) -m -n $$ns && \
-	    $(RUN_STDPMID) $(PMINFO) -m -n $$ns | \
+	    echo $(PMNSMERGE) $$thisDir/pmns.tmp $$pmdaroot $$thisDir/pmns.tmp.out && \
+	    $(PMNSMERGE) $$thisDir/pmns.tmp $$pmdaroot $$thisDir/pmns.tmp.out && \
+	    echo pminfo -m -n $$ns && pminfo -m -n $$ns | \
 		awk -v pmda=$$pmdaName -v ns=$$ns \
 		    >>$$thisDir/pmns.tmp.map ' \
 		    NF==3 && $$2=="PMID:" && \
@@ -109,17 +100,9 @@ help pmns metric_table.c subdomains.c : \
 	./clusterns.pl pmns.tmp pmns.tmp.map $(SUBHELP)
 	rm -f pmns.tmp*
 
-domain.h: $(STDPMID)
-	rm -f domain.h
-	echo "/*" >domain.h
-	echo " * built from $(PCP_VAR_DIR)/pmns/stdpmid" >>domain.h
-	echo " */" >>domain.h
-	$(PCP_AWK_PROG) <$(STDPMID) >>domain.h \
-	    '/#define[ 	][ 	]*$(DOMAIN)[ 	]/ { print "#define $(DOMAIN) " $$3 }'
-
-default_pcp: default
-
-install_pcp: install
+domain.h: $(PCP_VAR_DIR)/pmns/stdpmid
+	rm -f $@
+	egrep "#define +$(DOMAIN)" $? > $@
 
 $(CMDTARGET) : OBJECTS=$($(CMDTARGET)_OBJS)
 $(CMDTARGET) : $($(CMDTARGET)_OBJS)
@@ -128,5 +111,5 @@ $(DAEMON): OBJECTS=$($(DAEMON)_OBJS)
 $(DAEMON): $($(DAEMON)_OBJS)
 	$(CCF) -o $(DAEMON) $(LDFLAGS) $(OBJECTS) $(LDLIBS)
 
-pcp:
-	$(LN_S) -f $(TOPDIR)/src/include pcp
+include $(PCP_INC_DIR)/buildrules
+
