@@ -56,7 +56,7 @@ install: default
 	install -m 755 pmclusterd $(PREFIX)$(PCP_BINADM_DIR)/pmclusterd
 	install -m 755 rc_pmclusterd $(PREFIX)$(PCP_RC_DIR)/pmclusterd
 
-PMNSMERGE = $(PCP_LIB_DIR)/pcp/bin/pmnsmerge
+PMNSMERGE = $(PCP_BINADM_DIR)/pmnsmerge
 
 # Build a namespace containing all of the sub-PMDAS.  At the same time
 # generate a list of metric names and domain numbers and generate a C
