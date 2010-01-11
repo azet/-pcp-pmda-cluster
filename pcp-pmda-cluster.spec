@@ -3,7 +3,7 @@ Name: pcp-pmda-cluster
 URL: http://oss.sgi.com/projects/pcp
 Summary: Performance Co-Pilot (PCP) PMDA for clusters
 Version: 1.0.2
-Release: 1
+Release: 2
 Group: Productivity/Networking
 Vendor: SGI Inc.
 Packager: SGI Inc. <http://www.sgi.com/>
@@ -54,8 +54,11 @@ make install PREFIX=%{buildroot}
 rm -rf %{buildroot}
 
 %preun
-cd %{pcp_pmdas_dir}/cluster;
-./Remove
+if [ "$1" -eq 0 ]; then
+  # Only uninstall the PMDA when removing the package, not during an upgrade
+  cd %{pcp_pmdas_dir}/cluster;
+  ./Remove
+fi
 
 %files
 %defattr(-,root,root)
