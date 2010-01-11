@@ -2,7 +2,7 @@
 Name: pcp-pmda-cluster
 URL: http://oss.sgi.com/projects/pcp
 Summary: Performance Co-Pilot (PCP) PMDA for clusters
-Version: 1.0
+Version: 1.0.2
 Release: 1
 Group: Productivity/Networking
 Vendor: SGI Inc.

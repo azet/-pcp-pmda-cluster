@@ -100,9 +100,12 @@ help pmns metric_table.c subdomains.c : \
 	./clusterns.pl pmns.tmp pmns.tmp.map $(SUBHELP)
 	rm -f pmns.tmp*
 
-domain.h: $(PCP_VAR_DIR)/pmns/stdpmid
+domain.h: $(PCP_VAR_DIR)/pmns/stdpmid.pcp
 	rm -f $@
-	egrep "#define +$(DOMAIN)" $? > $@
+	echo "/*" >domain.h
+	echo " * build from $(PCP_VAR_DIR)/pmns/stdpmid.pcp" >>domain.h
+	echo " */" >>domain.h
+	$(PCP_AWK_PROG) < $? >> $@ '$$1 == "$(DOMAIN)" { print "#define $(DOMAIN) " $$2 }'
 
 $(CMDTARGET) : OBJECTS=$($(CMDTARGET)_OBJS)
 $(CMDTARGET) : $($(CMDTARGET)_OBJS)
