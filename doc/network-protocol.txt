@@ -1,0 +1,68 @@
+
+Author:  Martin Hicks  <mort@sgi.com>
+Date:    August 7, 2009
+
+I'm just writing this up to remind myself how it works as I look to
+extend the protocol to allow metric push quiescing and multiple
+metric groups with different push intervals.
+
+Server
+------
+
+In the server the main select() loop processes things in the following
+order:
+
+   - PCP Main loop
+   - New client connections
+   - Existing client connection
+
+
+After the client connects it initiates communication with the server
+periodically.  The first thing it sends is the command:
+
+    CLUSTER_PDU_VERSION   - client sending version
+    CLUSTER_PDU_ID        - client sends:  hostnamelen hostname[]
+                            then waits for server to reply with
+                            the CLUSTER_PDU_CONFIG
+    CLUSTER_PDU_CONFIG    - Server sends the list of metrics to the
+                            client:  
+                                poll_interval, metric_count, pmid [,pmid ...]
+    CLUSTER_PDU_INSTANCE  - Client sends:  indom, instance, name[]
+    CLUSTER_PDU_RESULT    - client sends:  encoded pmResult
+                            Then server sends CONFIG or SUSPEND,
+                            if required.
+
+
+Client
+------
+
+The main loop of the client handles reconnects, etc.
+When it connects to the server the state machine starts, and
+the sequence is:
+
+    - Send version via the CLUSTER_PDU_VERSION command
+
+    - Send hostname via the CLUSTER_PDU_ID command
+
+    - Then it waits for the config (metric list) to be sent
+      from the server.
+
+    - Then it sends instance domains for each metric
+
+    - Then the main fetch/send loop is entered:
+
+        * pmFetch() is called on the list of metrics
+
+        * CLUSTER_PDU_RESULT is sent along with the pmResult
+
+        * Sleep for push_interval (2 seconds)
+          * If the timeout expires without any suspend message
+            coming from the leader, then restart the fetch/send
+            loop.
+
+        * Otherwise look for a SUSPEND message.
+          If you get one then you block forever, waiting for the
+          resume message to be sent.
+
+
+
