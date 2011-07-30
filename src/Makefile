@@ -101,11 +101,7 @@ help pmns metric_table.c subdomains.c : \
 	rm -f pmns.tmp*
 
 domain.h: $(PCP_VAR_DIR)/pmns/stdpmid.pcp
-	rm -f $@
-	echo "/*" >domain.h
-	echo " * build from $(PCP_VAR_DIR)/pmns/stdpmid.pcp" >>domain.h
-	echo " */" >>domain.h
-	$(PCP_AWK_PROG) < $? >> $@ '$$1 == "$(DOMAIN)" { print "#define $(DOMAIN) " $$2 }'
+	$(DOMAIN_MAKERULE)
 
 $(CMDTARGET) : OBJECTS=$($(CMDTARGET)_OBJS)
 $(CMDTARGET) : $($(CMDTARGET)_OBJS)
